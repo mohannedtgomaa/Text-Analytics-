@@ -1,0 +1,168 @@
+---
+title: "Text Analytics Project"
+author: "Mohanned Gomaa"
+date: "4/1/2020"
+output: pdf_document
+---
+```{r}
+setwd('D:/DS Portfolio') #Setting up my working directory  
+```
+
+```{r}
+#install.packages('tm') install necessary packages.
+library(tm)
+```
+
+```{r}
+#import data and creating a corpus
+
+Source.data = DirSource("D:/R Training/Text Analytics/linkedin/Processing Text with R Essential Training/Ex_Files_Text_R_EssT/Exercise Files/data")
+
+#Creating a document corpus 
+project.corpus = VCorpus(Source.data)
+
+```
+
+```{r}
+#Exploring corpus data 
+
+inspect(project.corpus) #check the corpus info.
+
+inspect(project.corpus [[1]]) #inspecting the content of the document 1 in my corpus 
+inspect(project.corpus [[2]]) #inspecting the content of the document 2 in my corpus 
+
+
+meta(project.corpus [[1]]) #inspecting the meta data of the document 1 in my corpus
+meta(project.corpus [[2]]) #inspecting the meta data of the document 2 in my corpus
+
+
+project.corpus[[1]]$meta$id #extracting the name of each document 
+project.corpus[[2]]$meta$id #extracting the name of each document 
+
+
+project.corpus[[1]]$meta$author = "Name" #changing meta info
+project.corpus[[1]]$meta$type = "Project"#changing meta info
+
+project.corpus[[2]]$meta$author = "Name"#changing meta info
+project.corpus[[2]]$meta$type = "Project"#changing meta info
+
+meta(project.corpus [[1]]) #inspecting the meta data of the document 1 to confirm changes were made
+meta(project.corpus [[2]]) #inspecting the meta data of the document 2 to confirm changes were made
+
+```
+
+```{r}
+#Saving my Volatile corpus as Persisting corpus 
+
+for (i_doc in 1:length(project.corpus)){
+  project.corpus[[i_doc]]$meta$id =
+    sub('.txt','',project.corpus[[i_doc]]$meta$id)
+} #removing .txt extension as will be duplicated once we write the corpus to hard desk.
+
+
+writeCorpus(project.corpus,"D:/R Training/Text Analytics/linkedin/Processing Text with R Essential Training/Ex_Files_Text_R_EssT/Exercise Files")#saving data to hard desk as Persisting corpus  (Mohanned to move it the end)
+```
+
+```{r}
+#Cleaning the Corpus
+#Creating Analyze function, that shows status of corpus (raw, cleaned and etc.), work count and character count. To track each step of the cleaning process.
+
+analyze_corpus = function(processing_step, corpus) {
+  
+  print("***************************************************")
+  print(processing_step)
+  print("---------------------------------------------------")
+  
+  for(i_doc in 1:length(corpus) ) {
+    print(paste(corpus[[i_doc]]$meta$id,
+                " words =", 
+                lengths(gregexpr("\\W+", corpus[[i_doc]])) + 1,
+                " chars =",
+                nchar(corpus[[i_doc]]$content)
+    ))
+  }
+  
+  print("---------------------------------------------------")
+  print(corpus[[1]]$content) #print text in doc number 1 
+  print("---------------------------------------------------")
+  print(corpus[[2]]$content) #print text in doc number 2 
+  print("----------------------The End---------------------------")
+}
+
+analyze_corpus("Raw input data", project.corpus) #Print raw corpus
+
+```
+
+```{r}
+#Step 1: Cleaning text
+
+#Converting Upper case to lower case words;
+project.corpus1 = tm_map(project.corpus, content_transformer(tolower))
+analyze_corpus("Text Converted to Lower-case", project.corpus1) #Print processed corpus
+
+#Removing Punctuation 
+project.corpus2 = tm_map(project.corpus1, removePunctuation)
+analyze_corpus("Removed Punctuation", project.corpus2) #Print processed corpus
+
+```
+
+```{r}
+#Step 2: Stop-words removal
+
+#Removing all stop words, that has no meaning for R;
+project.corpus3 = tm_map(project.corpus2, removeWords, stopwords())
+analyze_corpus("Removed Stop-words", project.corpus3) #Print processed corpus
+```
+
+```{r}
+#Step3: Stemming
+
+#Stemming is removing all the necessary words combination that won't affected the machine understanding of the word. For example, we use only combin (the stem of the word), instead of combination, combined, combining and etc.
+
+#install.packages("SnowballC")
+library("SnowballC")
+
+#Stemming my corpus;
+project.corpus4 = tm_map(project.corpus3, stemDocument)
+analyze_corpus("Stemmed Corpus", project.corpus4) #Print processed corpus
+89+69
+69/158
+```
+
+```{r}
+#Step 4: Creating a Term Frequency matrix or (TF-IDF)
+# This matrix simply creates a table that counts words repeated in a corpus. 
+
+#Generate the Document Term matrix
+project_dtm <- DocumentTermMatrix(project.corpus4)
+project_dtm
+
+inspect(project_dtm) #checking the created matrix 
+
+#Understanding what my matrix hold 
+Docs(project_dtm) #List of docs in the matrix
+
+nDocs(project_dtm)#Number of docs in the matrix
+
+Terms(project_dtm)#List of terms in the matrix
+
+nTerms(project_dtm)#Number of terms in the matrix
+
+
+project_dtm_matrix = as.matrix(project_dtm)#Convert my TF-IDF to a matrix
+
+project_dtm_matrix[, c('data','fast')]#Inspect a specific term(s)
+
+```
+
+
+```{r}
+#Step 5: Reducing the sparsity of data 
+
+findFreqTerms(project_dtm,5) #looking for words repeated more than 5 times.
+
+dense_project_dtm = removeSparseTerms(project_dtm,sparse = 0.5) #removing sparse terms that are 50% 
+
+inspect(dense_project_dtm)
+
+```
